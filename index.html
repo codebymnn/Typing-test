@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keyclack — Typing Speed Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#12141c; --bg-2:#181b26; --panel:#1e2230; --panel-2:#252a3b;
+  --ink:#edeae3; --ink-dim:#9a9fb5; --ink-faint:#5a5f77;
+  --caret:#4fd1c5; --error:#f4a950; --error-2:#e2574c; --violet:#8b7fd1;
+  --border:#2c3143; --shadow:0 10px 30px rgba(0,0,0,.35);
+  --font-display:'Space Grotesk',sans-serif; --font-mono:'IBM Plex Mono',monospace; --font-ui:'Inter',sans-serif;
+  --test-size:1.5rem; --gold:#e0b354;
+}
+[data-theme="light"]{
+  --bg:#f4f2ec; --bg-2:#ffffff; --panel:#ffffff; --panel-2:#f0eee7;
+  --ink:#1c1d22; --ink-dim:#5c5f6e; --ink-faint:#a5a8b4;
+  --caret:#0f9b90; --error:#c07a1a; --error-2:#c23b2f; --violet:#6a5fc2;
+  --border:#dedbd1; --shadow:0 10px 30px rgba(0,0,0,.08);
+}
+[data-theme="sepia"]{
+  --bg:#2b2420; --bg-2:#332b25; --panel:#3a3129; --panel-2:#443930;
+  --ink:#f0e2c8; --ink-dim:#c2ab84; --ink-faint:#7d6a52;
+  --caret:#e0a548; --error:#e2574c; --error-2:#c23b2f; --violet:#c98f5f;
+  --border:#4d4136; --shadow:0 10px 30px rgba(0,0,0,.4);
+}
+[data-theme="neon"]{
+  --bg:#0a0a12; --bg-2:#0f0f1c; --panel:#14142400; --panel:#14142a; --panel-2:#191933;
+  --ink:#e9e9ff; --ink-dim:#8888c0; --ink-faint:#4a4a75;
+  --caret:#00ffc8; --error:#ff2e63; --error-2:#ff2e63; --violet:#b967ff;
+  --border:#25254a; --shadow:0 0 40px rgba(0,255,200,.08);
+}
+*{box-sizing:border-box;}
+body{margin:0;color:var(--ink);font-family:var(--font-ui);transition:background .3s,color .3s;min-height:100vh;
+  background:
+    radial-gradient(900px 500px at 15% -10%, color-mix(in srgb, var(--caret) 10%, transparent), transparent 60%),
+    radial-gradient(700px 500px at 100% 0%, color-mix(in srgb, var(--violet) 10%, transparent), transparent 55%),
+    var(--bg);
+  background-attachment:fixed;
+}
+button{font-family:inherit;cursor:pointer;transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;}
+::selection{background:var(--caret);color:var(--bg);}
+.wrap{max-width:920px;margin:0 auto;padding:1.25rem 1.25rem 4rem;}
+
+/* header */
+header{display:flex;align-items:center;justify-content:space-between;padding:.5rem 0 1.5rem;flex-wrap:wrap;gap:.75rem;}
+.logo{font-family:var(--font-display);font-weight:700;font-size:1.3rem;display:flex;align-items:center;gap:.5rem;letter-spacing:.02em;}
+.logo .dot{width:10px;height:10px;border-radius:2px;background:var(--caret);box-shadow:0 0 12px var(--caret);}
+.hdr-controls{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;}
+select,.icon-btn{background:var(--panel);border:1px solid var(--border);color:var(--ink);border-radius:8px;padding:.4rem .6rem;font-size:.8rem;}
+.icon-btn{padding:.4rem .55rem;line-height:1;}
+.icon-btn.active{border-color:var(--caret);color:var(--caret);}
+nav.tabs{display:flex;gap:.35rem;margin:0 0 1.25rem;flex-wrap:wrap;}
+nav.tabs button{background:transparent;border:1px solid var(--border);color:var(--ink-dim);padding:.5rem .9rem;border-radius:8px;font-size:.82rem;font-weight:600;}
+nav.tabs button.active{background:var(--panel);color:var(--ink);border-color:var(--caret);}
+
+/* mode bar */
+.modebar{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:.6rem .75rem;margin-bottom:1.5rem;}
+.seg{display:flex;gap:.2rem;background:var(--panel-2);border-radius:8px;padding:.2rem;}
+.seg button{background:transparent;border:0;color:var(--ink-dim);padding:.35rem .65rem;border-radius:6px;font-size:.78rem;font-weight:600;}
+.seg button.active{background:var(--caret);color:var(--bg);}
+.divider{width:1px;height:20px;background:var(--border);margin:0 .3rem;}
+
+/* test area */
+.test-area{position:relative;background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:2rem 1.75rem;box-shadow:var(--shadow);}
+.stats-live{display:flex;gap:1.75rem;margin-bottom:1.2rem;font-family:var(--font-mono);}
+.stats-live .stat b{display:block;font-size:1.6rem;color:var(--caret);font-weight:600;}
+.stats-live .stat span{font-size:.68rem;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.08em;}
+.text-display{font-family:var(--font-mono);font-size:var(--test-size);line-height:2;color:var(--ink-faint);letter-spacing:.01em;user-select:none;outline:none;min-height:6.5em;position:relative;word-wrap:break-word;}
+.text-display .word{margin-right:.55em;display:inline-block;}
+.text-display .char{position:relative;}
+.text-display .char.correct{color:var(--ink);}
+.text-display .char.incorrect{color:var(--error-2);text-decoration:underline wavy var(--error-2);}
+.text-display .char.current::before{content:'';position:absolute;left:-1px;top:0;bottom:0;width:2px;background:var(--caret);animation:blink 1s step-end infinite;}
+@keyframes blink{50%{opacity:0;}}
+.hidden-input{position:absolute;opacity:0;pointer-events:none;}
+.test-foot{display:flex;justify-content:space-between;align-items:center;margin-top:1.25rem;}
+.restart-btn{background:var(--panel-2);border:1px solid var(--border);color:var(--ink-dim);padding:.5rem 1rem;border-radius:8px;font-weight:600;font-size:.85rem;display:flex;gap:.4rem;align-items:center;}
+.restart-btn:hover{color:var(--caret);border-color:var(--caret);}
+.hint{font-size:.75rem;color:var(--ink-faint);}
+
+/* focus mode */
+body.focus header,body.focus nav.tabs,body.focus .modebar,body.focus .panel-below{display:none !important;}
+body.focus .wrap{padding-top:12vh;max-width:800px;}
+body.focus .test-area{border-color:transparent;background:transparent;box-shadow:none;padding:0;}
+
+/* keyboard */
+.keyboard{margin-top:1.75rem;user-select:none;}
+.kb-row{display:flex;justify-content:center;gap:.28rem;margin-bottom:.28rem;}
+.key{background:var(--panel-2);border:1px solid var(--border);border-radius:6px;min-width:2.1rem;height:2.1rem;display:flex;align-items:center;justify-content:center;font-size:.68rem;color:var(--ink-dim);font-family:var(--font-mono);transition:all .1s;}
+.key.wide{min-width:3.6rem;}
+.key.next{background:var(--caret);color:var(--bg);border-color:var(--caret);}
+.key.heat-1{background:#4a3a30;} .key.heat-2{background:#6b3f30;} .key.heat-3{background:#8a3a30;color:#fff;}
+
+/* results modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:1rem;}
+.modal{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:2rem;max-width:520px;width:100%;box-shadow:var(--shadow);}
+.modal h2{font-family:var(--font-display);margin:0 0 1.2rem;}
+.result-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1.5rem;}
+.result-grid .r{background:var(--panel-2);border-radius:10px;padding:.8rem;text-align:center;}
+.result-grid .r b{display:block;font-size:1.5rem;font-family:var(--font-mono);color:var(--caret);}
+.result-grid .r span{font-size:.68rem;color:var(--ink-faint);text-transform:uppercase;}
+.modal-actions{display:flex;gap:.5rem;flex-wrap:wrap;}
+.btn{background:linear-gradient(135deg, var(--caret), color-mix(in srgb, var(--caret) 70%, var(--violet)));color:var(--bg);border:0;padding:.65rem 1.2rem;border-radius:9px;font-weight:700;font-size:.85rem;box-shadow:0 4px 14px color-mix(in srgb, var(--caret) 35%, transparent);}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px color-mix(in srgb, var(--caret) 45%, transparent);}
+.btn:active{transform:translateY(0);}
+.btn.secondary{background:transparent;border:1px solid var(--border);color:var(--ink);box-shadow:none;}
+.btn.secondary:hover{border-color:var(--caret);color:var(--caret);transform:none;}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none !important;box-shadow:none !important;}
+.btn.gold{background:linear-gradient(135deg, var(--gold), #b9853a);box-shadow:0 4px 14px rgba(224,179,84,.35);}
+.badge-pop{background:var(--violet);color:#fff;border-radius:8px;padding:.5rem .75rem;font-size:.78rem;margin-top:.75rem;display:none;}
+
+/* panels below */
+.panel-below{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin-top:1.5rem;position:relative;overflow:hidden;box-shadow:var(--shadow);}
+.panel-below::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--caret),var(--violet));opacity:.7;}
+.panel-below h3{margin-top:0;font-family:var(--font-display);display:flex;align-items:center;gap:.5rem;}
+.stat-row{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem;}
+.stat-row .c{background:var(--panel-2);border-radius:10px;padding:.7rem 1rem;flex:1;min-width:110px;text-align:center;}
+.stat-row .c b{display:block;font-size:1.3rem;color:var(--caret);font-family:var(--font-mono);}
+.stat-row .c span{font-size:.68rem;color:var(--ink-faint);}
+canvas.chart{width:100%;height:180px;}
+table{width:100%;border-collapse:collapse;font-size:.85rem;}
+th,td{text-align:left;padding:.5rem;border-bottom:1px solid var(--border);}
+th{color:var(--ink-faint);font-size:.7rem;text-transform:uppercase;}
+.achv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.75rem;}
+.achv{background:var(--panel-2);border-radius:10px;padding:.9rem;text-align:center;opacity:.35;border:1px solid var(--border);}
+.achv.unlocked{opacity:1;border-color:var(--caret);}
+.achv .ic{font-size:1.5rem;}
+.achv b{display:block;font-size:.8rem;margin:.3rem 0 .1rem;}
+.achv span{font-size:.68rem;color:var(--ink-faint);}
+textarea{width:100%;background:var(--panel-2);border:1px solid var(--border);color:var(--ink);border-radius:8px;padding:.6rem;font-family:var(--font-mono);font-size:.85rem;min-height:90px;}
+input[type=text],input[type=number]{background:var(--panel-2);border:1px solid var(--border);color:var(--ink);border-radius:8px;padding:.5rem .6rem;font-family:inherit;}
+label.lbl{font-size:.75rem;color:var(--ink-dim);display:block;margin-bottom:.3rem;}
+.section-grp{margin-bottom:1.5rem;}
+.race-track{background:var(--panel-2);border-radius:8px;padding:.5rem .75rem;margin-bottom:.5rem;}
+.race-bar-bg{background:var(--border);height:8px;border-radius:4px;overflow:hidden;margin-top:.3rem;}
+.race-bar{background:var(--caret);height:100%;width:0%;transition:width .4s;}
+
+/* admin login gate */
+.admin-login-box{max-width:340px;margin:1rem auto;text-align:center;background:var(--panel-2);border:1px solid var(--border);border-radius:14px;padding:2rem 1.5rem;}
+.admin-login-box .lock-ic{font-size:2rem;margin-bottom:.5rem;}
+.admin-login-box input{width:100%;margin-bottom:.6rem;}
+.admin-login-box .err{color:var(--error-2);font-size:.78rem;min-height:1.1em;margin-top:.3rem;}
+.admin-topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;}
+.admin-topbar .who{font-size:.8rem;color:var(--ink-dim);}
+.admin-topbar .who b{color:var(--caret);}
+
+/* certificate request status */
+.status-pill{display:inline-flex;align-items:center;gap:.4rem;font-size:.78rem;font-weight:700;padding:.3rem .7rem;border-radius:999px;}
+.status-pill.pending{background:color-mix(in srgb, var(--error) 20%, transparent);color:var(--error);}
+.status-pill.approved{background:color-mix(in srgb, var(--caret) 20%, transparent);color:var(--caret);}
+.status-pill.rejected{background:color-mix(in srgb, var(--error-2) 20%, transparent);color:var(--error-2);}
+.status-pill.none{background:var(--panel-2);color:var(--ink-faint);}
+.req-row{display:flex;justify-content:space-between;align-items:center;gap:.75rem;background:var(--panel-2);border-radius:10px;padding:.7rem 1rem;margin-bottom:.6rem;flex-wrap:wrap;}
+.req-row .meta{font-size:.8rem;color:var(--ink-dim);}
+.req-row .meta b{color:var(--ink);}
+.req-actions{display:flex;gap:.4rem;}
+.req-actions .btn,.req-actions .btn.secondary{padding:.4rem .7rem;font-size:.75rem;}
+
+footer.site-footer{text-align:center;padding:2rem 0 .5rem;color:var(--ink-faint);font-size:.78rem;border-top:1px solid var(--border);margin-top:2.5rem;}
+footer.site-footer b{color:var(--ink-dim);}
+body.focus footer.site-footer{display:none;}
+@media (max-width:640px){.result-grid{grid-template-columns:1fr 1fr;} .stats-live{gap:1rem;}}
+</style>
+</head>
+<body data-theme="dark">
+<div class="wrap">
+
+  <header>
+    <div class="logo"><span class="dot"></span>Keyclack</div>
+    <div class="hdr-controls">
+      <select id="themeSel" title="Theme">
+        <option value="dark">Dark</option>
+        <option value="light">Light</option>
+        <option value="sepia">Sepia</option>
+        <option value="neon">Neon</option>
+      </select>
+      <select id="fontSel" title="Font">
+        <option value="'IBM Plex Mono',monospace">Plex Mono</option>
+        <option value="'Space Grotesk',sans-serif">Grotesk</option>
+        <option value="'Courier New',monospace">Courier</option>
+        <option value="'Inter',sans-serif">Inter</option>
+      </select>
+      <button class="icon-btn" id="soundBtn" title="Toggle keystroke sound">🔊</button>
+      <button class="icon-btn" id="focusBtn" title="Focus mode">⛶</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="active" data-tab="test">Test</button>
+    <button data-tab="history">History</button>
+    <button data-tab="achievements">Achievements</button>
+    <button data-tab="leaderboard">Leaderboard</button>
+    <button data-tab="race">Race</button>
+    <button data-tab="certificate">Certificate</button>
+    <button data-tab="admin">Admin</button>
+  </nav>
+
+  <!-- TEST TAB -->
+  <section id="tab-test">
+    <div class="modebar">
+      <div class="seg" id="modeSeg">
+        <button class="active" data-mode="time">Time</button>
+        <button data-mode="words">Words</button>
+      </div>
+      <div class="seg" id="amountSeg"></div>
+      <div class="divider"></div>
+      <div class="seg" id="catSeg">
+        <button class="active" data-cat="common">Words</button>
+        <button data-cat="quotes">Quotes</button>
+        <button data-cat="punct">Punctuation</button>
+        <button data-cat="numbers">Numbers</button>
+        <button data-cat="code">Code</button>
+        <button data-cat="custom">Custom</button>
+      </div>
+      <div class="divider"></div>
+      <div class="seg" id="diffSeg">
+        <button data-d="easy">Easy</button>
+        <button class="active" data-d="medium">Medium</button>
+        <button data-d="hard">Hard</button>
+      </div>
+    </div>
+
+    <div id="customBox" style="display:none;margin-bottom:1rem;">
+      <textarea id="customText" placeholder="Paste your own practice text here…"></textarea>
+    </div>
+
+    <div class="test-area">
+      <div class="stats-live">
+        <div class="stat"><b id="liveWpm">0</b><span>WPM</span></div>
+        <div class="stat"><b id="liveAcc">100%</b><span>Accuracy</span></div>
+        <div class="stat"><b id="liveTime">30</b><span id="liveTimeLbl">Seconds left</span></div>
+        <div class="stat"><b id="liveErr">0</b><span>Errors</span></div>
+      </div>
+      <div class="text-display" id="textDisplay" tabindex="0"></div>
+      <input class="hidden-input" id="hiddenInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <div class="test-foot">
+        <button class="restart-btn" id="restartBtn">↻ Restart (Tab)</button>
+        <span class="hint">Click text and start typing</span>
+      </div>
+
+      <div class="keyboard" id="virtualKeyboard"></div>
+    </div>
+  </section>
+
+  <!-- HISTORY -->
+  <section id="tab-history" style="display:none;">
+    <div class="panel-below">
+      <h3>Your Progress</h3>
+      <div class="stat-row" id="historyStatRow"></div>
+      <canvas class="chart" id="historyChart"></canvas>
+      <h3 style="margin-top:1.5rem;">Recent Tests</h3>
+      <table id="historyTable"><thead><tr><th>Date</th><th>Mode</th><th>WPM</th><th>Accuracy</th><th>Errors</th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="panel-below">
+      <h3>Keystroke Heatmap</h3>
+      <p class="hint" style="margin-top:-.5rem;">Keys you mistype most, darker = more errors (this session + saved history).</p>
+      <div class="keyboard" id="heatKeyboard"></div>
+    </div>
+  </section>
+
+  <!-- ACHIEVEMENTS -->
+  <section id="tab-achievements" style="display:none;">
+    <div class="panel-below">
+      <div class="stat-row">
+        <div class="c"><b id="xpVal">0</b><span>XP</span></div>
+        <div class="c"><b id="levelVal">1</b><span>Level</span></div>
+        <div class="c"><b id="streakVal">0</b><span>Day Streak</span></div>
+        <div class="c"><b id="bestVal">0</b><span>Best WPM</span></div>
+      </div>
+      <h3>Badges</h3>
+      <div class="achv-grid" id="achvGrid"></div>
+    </div>
+  </section>
+
+  <!-- LEADERBOARD -->
+  <section id="tab-leaderboard" style="display:none;">
+    <div class="panel-below">
+      <h3>Global Leaderboard</h3>
+      <p class="hint" style="margin-top:-.5rem;">Shared across everyone using this app — visible to other users. Set a display name to appear here.</p>
+      <div class="section-grp">
+        <label class="lbl">Display name</label>
+        <input type="text" id="displayName" placeholder="e.g. Abdul_H">
+        <button class="btn" id="saveNameBtn" style="margin-left:.4rem;">Save</button>
+      </div>
+      <table><thead><tr><th>#</th><th>Name</th><th>Best WPM</th><th>Accuracy</th></tr></thead><tbody id="leaderboardBody"></tbody></table>
+    </div>
+  </section>
+
+  <!-- RACE -->
+  <section id="tab-race" style="display:none;">
+    <div class="panel-below">
+      <h3>Async Typing Race</h3>
+      <p class="hint" style="margin-top:-.5rem;">Join a shared room code. Progress is polled every second and shared with anyone using the same code — this simulates multiplayer without a dedicated realtime server, so it's not instant like a live socket connection.</p>
+      <div class="section-grp">
+        <label class="lbl">Room code</label>
+        <input type="text" id="roomCode" placeholder="e.g. FRIENDS1">
+        <button class="btn" id="joinRoomBtn" style="margin-left:.4rem;">Join / Create</button>
+      </div>
+      <div id="raceTracks"></div>
+      <button class="btn secondary" id="startRaceBtn" style="display:none;">Start typing this room's text</button>
+    </div>
+  </section>
+
+  <!-- CERTIFICATE -->
+  <section id="tab-certificate" style="display:none;">
+    <div class="panel-below">
+      <h3>🎓 Typing Certificate</h3>
+      <p class="hint" style="margin-top:-.5rem;">Certificates are issued by an admin. Submit a request with your best result — once approved, you can generate and download it.</p>
+      <div class="section-grp">
+        <label class="lbl">Name on certificate</label>
+        <input type="text" id="certName" placeholder="Your full name">
+      </div>
+      <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+        <button class="btn gold" id="requestCertBtn">Submit Request to Admin</button>
+        <span id="certStatusPill" class="status-pill none">Not requested</span>
+      </div>
+      <p class="hint" id="certStatusNote" style="margin-top:.5rem;"></p>
+
+      <div id="certGenBox" style="display:none;margin-top:1.25rem;">
+        <button class="btn" id="genCertBtn">Generate Certificate</button>
+        <div style="margin-top:1rem;"><canvas id="certCanvas" width="1000" height="680" style="width:100%;max-width:640px;border-radius:10px;border:1px solid var(--border);box-shadow:var(--shadow);"></canvas></div>
+        <button class="btn secondary" id="downloadCertBtn" style="margin-top:.75rem;">Download PNG</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADMIN -->
+  <section id="tab-admin" style="display:none;">
+    <div id="adminLoginView" class="admin-login-box">
+      <div class="lock-ic">🔒</div>
+      <h3 style="margin-top:0;">Admin Login</h3>
+      <input type="text" id="adminUser" placeholder="Admin username">
+      <input type="password" id="adminPass" placeholder="Admin password">
+      <button class="btn" id="adminLoginBtn" style="width:100%;">Log In</button>
+      <div class="err" id="adminLoginErr"></div>
+      <p class="hint" style="margin-top:.75rem;">Default: <b>admin</b> / <b>admin123</b> — change this after logging in. Note: this is a simple client-side lock for a demo/portfolio site, not real server-side security.</p>
+    </div>
+
+    <div id="adminPanelView" style="display:none;">
+      <div class="admin-topbar">
+        <span class="who">Logged in as <b id="adminWhoName">admin</b></span>
+        <button class="btn secondary" id="adminLogoutBtn">Log out</button>
+      </div>
+
+      <div class="panel-below">
+        <h3>🎓 Certificate Requests</h3>
+        <div id="certRequestsList"><p class="hint">No requests yet.</p></div>
+      </div>
+
+      <div class="panel-below">
+        <h3>Word Lists</h3>
+        <p class="hint" style="margin-top:-.5rem;">Edit the shared word list used by everyone testing this app at medium difficulty.</p>
+        <label class="lbl">Common words (comma separated)</label>
+        <textarea id="adminWords"></textarea>
+        <button class="btn" id="saveWordsBtn" style="margin-top:.6rem;">Save Word List</button>
+      </div>
+
+      <div class="panel-below">
+        <h3>Practice Reminders</h3>
+        <button class="btn secondary" id="enableNotif">Enable browser reminder</button>
+        <span class="hint" id="notifStatus" style="margin-left:.5rem;"></span>
+      </div>
+
+      <div class="panel-below">
+        <h3>Change Admin Credentials</h3>
+        <label class="lbl">New username</label>
+        <input type="text" id="newAdminUser" placeholder="Leave blank to keep current">
+        <label class="lbl" style="margin-top:.5rem;">New password</label>
+        <input type="password" id="newAdminPass" placeholder="Leave blank to keep current">
+        <button class="btn secondary" id="saveAdminCredsBtn" style="margin-top:.6rem;">Update Credentials</button>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    &copy; <span id="footYear"></span> Keyclack Typing Trainer — Code by AHM
+  </footer>
+
+</div>
+
+<div class="modal-bg" id="resultsModal" style="display:none;">
+  <div class="modal">
+    <h2>Results</h2>
+    <div class="result-grid">
+      <div class="r"><b id="resWpm">0</b><span>WPM</span></div>
+      <div class="r"><b id="resRaw">0</b><span>Raw WPM</span></div>
+      <div class="r"><b id="resAcc">0%</b><span>Accuracy</span></div>
+      <div class="r"><b id="resTime">0s</b><span>Time</span></div>
+      <div class="r"><b id="resErr">0</b><span>Errors</span></div>
+      <div class="r"><b id="resXp">+0</b><span>XP Earned</span></div>
+    </div>
+    <div class="badge-pop" id="badgePop">🏆 New badge unlocked!</div>
+    <div class="modal-actions">
+      <button class="btn" id="tryAgainBtn">Try Again</button>
+      <button class="btn secondary" id="exportImgBtn">Export as Image</button>
+      <button class="btn secondary" id="shareBtn">Share</button>
+      <button class="btn secondary" id="closeModalBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= DATA ================= */
+const WORD_LISTS = {
+  easy: "the of and a to in is you that it he was for on are as with his they at be this from I have or by one had not word but what some we can out other were all there when up use your how said an each she which do their time if will way about many then them write would like so these her long make thing see him two has look more day could go come did".split(" "),
+  medium: "because between important consider example community available significant environment necessary experience information understand education following actually different several process program together government national already business situation development however question knowledge remember although possible probably continue increase decrease measure include return happen".split(" "),
+  hard: "juxtaposition ephemeral bureaucratic idiosyncratic quintessential ubiquitous paradoxical relinquish reconnaissance perpendicular metamorphosis unprecedented conscientious circumnavigate incomprehensible disproportionate extraterritorial counterintuitive interdisciplinary phenomenological".split(" ")
+};
+const QUOTES = [
+  "The only way to do great work is to love what you do, and if you have not found it yet keep looking.",
+  "Success is not final, failure is not fatal, it is the courage to continue that counts in the long run.",
+  "In the middle of every difficulty lies opportunity waiting patiently for someone to notice it.",
+  "Whether you think you can or you think you cannot, you are usually right about your own limits.",
+  "The future belongs to those who believe in the beauty of their dreams and act on them daily."
+];
+const CODE_SNIPPETS = [
+  "function add(a, b) {\n  return a + b;\n}\nconsole.log(add(2, 3));",
+  "public class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello\");\n  }\n}",
+  "for (let i = 0; i < 10; i++) {\n  if (i % 2 === 0) continue;\n  print(i);\n}",
+  "SELECT name, age FROM users WHERE age > 18 ORDER BY name ASC;"
+];
+const PUNCT_TOKENS = ["Hello,","world!","It's","a","nice","day.","Are","you","ready?","Let's","go!","Wait...","Really?","Yes!","No,","thanks.","Okay;","done."];
+function randomNumberString(count){
+  let out=[];
+  for(let i=0;i<count;i++) out.push(Math.floor(Math.random()*9999));
+  return out.join(" ");
+}
+
+const ACHIEVEMENTS = [
+  {id:"first",ic:"🎯",name:"First Steps",desc:"Complete your first test",check:h=>h.length>=1},
+  {id:"wpm50",ic:"⚡",name:"50 WPM Club",desc:"Reach 50 WPM",check:h=>h.some(x=>x.wpm>=50)},
+  {id:"wpm80",ic:"🚀",name:"80 WPM Club",desc:"Reach 80 WPM",check:h=>h.some(x=>x.wpm>=80)},
+  {id:"wpm100",ic:"👑",name:"100 WPM Club",desc:"Reach 100 WPM",check:h=>h.some(x=>x.wpm>=100)},
+  {id:"acc100",ic:"🎯",name:"Flawless",desc:"100% accuracy on a test",check:h=>h.some(x=>x.acc===100)},
+  {id:"ten",ic:"🔥",name:"Getting Serious",desc:"Complete 10 tests",check:h=>h.length>=10},
+  {id:"fifty",ic:"💎",name:"Dedicated",desc:"Complete 50 tests",check:h=>h.length>=50},
+  {id:"streak3",ic:"📅",name:"3 Day Streak",desc:"Practice 3 days in a row",check:(h,s)=>s>=3},
+  {id:"streak7",ic:"🌟",name:"Week Warrior",desc:"Practice 7 days in a row",check:(h,s)=>s>=7},
+];
+
+/* ================= STATE ================= */
+let state = {
+  mode:"time", amount:30, category:"common", difficulty:"medium",
+  words:[], charSpans:[], curWordIdx:0, curCharIdx:0, typed:"",
+  startTime:null, timer:null, timeLeft:30, running:false, finished:false,
+  totalTyped:0, totalErrors:0, correctChars:0, mistakes:{}, sound:true
+};
+const AMOUNTS = { time:[15,30,60,120], words:[10,25,50,100] };
+/* ================= STORAGE WRAPPER (works standalone AND inside claude.ai) ================= */
+// window.storage is only injected when this file runs as a Claude Artifact.
+// When opened as a plain downloaded HTML file (double-clicked, hosted elsewhere, etc.)
+// it won't exist, so every call falls back to localStorage — same browser only,
+// not synced across different people/devices, but the site keeps working.
+const CLOUD_STORAGE_AVAILABLE = (typeof window.storage !== "undefined" && window.storage && typeof window.storage.get === "function");
+async function storageGet(key, shared){
+  if(CLOUD_STORAGE_AVAILABLE){
+    try{ return await window.storage.get(key, shared); }
+    catch(e){ /* key not found or call failed */ return null; }
+  }
+  try{
+    const raw = localStorage.getItem((shared?"kc_shared:":"kc_local:")+key);
+    return raw!==null ? {key, value:raw, shared} : null;
+  }catch(e){ return null; }
+}
+async function storageSet(key, value, shared){
+  if(CLOUD_STORAGE_AVAILABLE){
+    try{ return await window.storage.set(key, value, shared); }
+    catch(e){ console.error("storageSet failed:", e); return null; }
+  }
+  try{
+    localStorage.setItem((shared?"kc_shared:":"kc_local:")+key, value);
+    return {key, value, shared};
+  }catch(e){ console.error("localStorage set failed:", e); return null; }
+}
+
+const DEVICE_KEY = "keyclack_device_id";
+function deviceId(){
+  let id = localStorage.getItem(DEVICE_KEY);
+  if(!id){ id = "u_"+Math.random().toString(36).slice(2,10); localStorage.setItem(DEVICE_KEY,id); }
+  return id;
+}
+
+/* ================= WORD GENERATION ================= */
+async function getCustomWordSource(){
+  try{
+    const r = await storageGet("wordlist:medium", true);
+    if(r && r.value) return JSON.parse(r.value);
+  }catch(e){}
+  return null;
+}
+async function generateText(){
+  const {category, difficulty, mode, amount} = state;
+  if(category==="custom"){
+    const t = document.getElementById("customText").value.trim();
+    return t.length? t : "Paste your own text in the box above to practice with it.";
+  }
+  if(category==="quotes") return QUOTES[Math.floor(Math.random()*QUOTES.length)];
+  if(category==="code") return CODE_SNIPPETS[Math.floor(Math.random()*CODE_SNIPPETS.length)];
+  if(category==="numbers") return randomNumberString(mode==="words"?amount:40);
+  if(category==="punct"){
+    let arr=[]; const n = mode==="words"?amount:40;
+    for(let i=0;i<n;i++) arr.push(PUNCT_TOKENS[Math.floor(Math.random()*PUNCT_TOKENS.length)]);
+    return arr.join(" ");
+  }
+  // common words, respects difficulty, possibly admin-edited list
+  let pool = WORD_LISTS[difficulty];
+  const custom = await getCustomWordSource();
+  if(difficulty==="medium" && custom && custom.length>5) pool = custom;
+  const n = mode==="words"? amount : 100;
+  let arr=[];
+  for(let i=0;i<n;i++) arr.push(pool[Math.floor(Math.random()*pool.length)]);
+  return arr.join(" ");
+}
+
+/* ================= RENDER TEXT ================= */
+async function newTest(){
+  clearInterval(state.timer);
+  const text = await generateText();
+  state.words = text.split(" ");
+  state.curWordIdx=0; state.curCharIdx=0; state.typed="";
+  state.startTime=null; state.running=false; state.finished=false;
+  state.timeLeft = state.mode==="time" ? state.amount : 9999;
+  state.totalTyped=0; state.totalErrors=0; state.correctChars=0;
+  document.getElementById("liveTime").textContent = state.mode==="time" ? state.timeLeft : "0";
+  document.getElementById("liveTimeLbl").textContent = state.mode==="time" ? "Seconds left" : "Words done";
+  document.getElementById("liveWpm").textContent="0";
+  document.getElementById("liveAcc").textContent="100%";
+  document.getElementById("liveErr").textContent="0";
+  renderText();
+  buildVirtualKeyboard();
+  updateVirtualKeyboardNext();
+  document.getElementById("hiddenInput").value="";
+  document.getElementById("hiddenInput").focus();
+}
+function renderText(){
+  const disp = document.getElementById("textDisplay");
+  disp.innerHTML = state.words.map((w,wi)=>{
+    const chars = w.split("").map((c,ci)=>`<span class="char" data-w="${wi}" data-c="${ci}">${c===" "?"&nbsp;":c}</span>`).join("");
+    return `<span class="word" data-wi="${wi}">${chars}</span>`;
+  }).join("");
+  markCurrent();
+}
+function markCurrent(){
+  document.querySelectorAll(".char.current").forEach(e=>e.classList.remove("current"));
+  const el = document.querySelector(`.char[data-w="${state.curWordIdx}"][data-c="${state.curCharIdx}"]`);
+  if(el) el.classList.add("current");
+}
+
+/* ================= INPUT HANDLING ================= */
+const hiddenInput = document.getElementById("hiddenInput");
+document.getElementById("textDisplay").addEventListener("click",()=>hiddenInput.focus());
+hiddenInput.addEventListener("keydown", e=>{
+  if(e.key==="Tab"){ e.preventDefault(); newTest(); return; }
+  if(state.finished) return;
+  if(e.key===" "){ e.preventDefault(); handleSpace(); return; }
+  if(e.key==="Backspace"){ e.preventDefault(); handleBackspace(); return; }
+  if(e.key.length===1){ e.preventDefault(); handleChar(e.key); }
+});
+function ensureStarted(){
+  if(!state.running){
+    state.running=true; state.startTime=Date.now();
+    if(state.mode==="time") startTimer();
+  }
+}
+function startTimer(){
+  state.timer = setInterval(()=>{
+    state.timeLeft--;
+    document.getElementById("liveTime").textContent = state.timeLeft;
+    updateLiveWpm();
+    if(state.timeLeft<=0) finishTest();
+  },1000);
+}
+function playTick(isError){
+  if(!state.sound) return;
+  try{
+    const ctx = playTick._ctx || (playTick._ctx = new (window.AudioContext||window.webkitAudioContext)());
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type="square"; o.frequency.value = isError? 160:520;
+    g.gain.value=0.04; o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime+0.045);
+  }catch(e){}
+}
+function handleChar(ch){
+  ensureStarted();
+  const word = state.words[state.curWordIdx];
+  const expected = word[state.curCharIdx];
+  const span = document.querySelector(`.char[data-w="${state.curWordIdx}"][data-c="${state.curCharIdx}"]`);
+  state.totalTyped++;
+  if(expected===ch){
+    if(span) span.classList.add("correct");
+    state.correctChars++;
+    playTick(false);
+  } else {
+    if(span) span.classList.add("incorrect");
+    state.totalErrors++;
+    state.mistakes[ch] = (state.mistakes[ch]||0)+1;
+    playTick(true);
+  }
+  state.curCharIdx++;
+  markCurrent();
+  updateVirtualKeyboardNext();
+  updateLiveWpm();
+  document.getElementById("liveErr").textContent = state.totalErrors;
+  if(state.curCharIdx>=word.length && state.curWordIdx===state.words.length-1 && state.mode==="words"){
+    finishTest();
+  }
+}
+function handleSpace(){
+  ensureStarted();
+  if(state.curWordIdx>=state.words.length-1 && state.mode==="words"){ return; }
+  state.curWordIdx++; state.curCharIdx=0;
+  markCurrent();
+  updateVirtualKeyboardNext();
+  if(state.mode==="words"){
+    document.getElementById("liveTime").textContent = state.curWordIdx;
+    if(state.curWordIdx>=state.words.length){ finishTest(); }
+  }
+}
+function handleBackspace(){
+  if(state.curCharIdx>0){
+    state.curCharIdx--;
+    const span = document.querySelector(`.char[data-w="${state.curWordIdx}"][data-c="${state.curCharIdx}"]`);
+    if(span){ span.classList.remove("correct","incorrect"); }
+    markCurrent();
+    updateVirtualKeyboardNext();
+  }
+}
+function updateLiveWpm(){
+  if(!state.startTime) return;
+  const mins = (Date.now()-state.startTime)/60000;
+  const wpm = mins>0 ? Math.round((state.correctChars/5)/mins) : 0;
+  document.getElementById("liveWpm").textContent = wpm;
+  const acc = state.totalTyped>0 ? Math.round((state.correctChars/state.totalTyped)*100) : 100;
+  document.getElementById("liveAcc").textContent = acc+"%";
+}
+
+/* ================= VIRTUAL KEYBOARD ================= */
+const KB_ROWS = [
+  ["1","2","3","4","5","6","7","8","9","0"],
+  ["q","w","e","r","t","y","u","i","o","p"],
+  ["a","s","d","f","g","h","j","k","l"],
+  ["z","x","c","v","b","n","m"]
+];
+function buildVirtualKeyboard(){
+  ["virtualKeyboard","heatKeyboard"].forEach(id=>{
+    const el = document.getElementById(id);
+    el.innerHTML = KB_ROWS.map(row=>
+      `<div class="kb-row">${row.map(k=>`<div class="key" data-key="${k}">${k}</div>`).join("")}${row.length===7?'<div class="key wide">space</div>':''}</div>`
+    ).join("");
+  });
+}
+function updateVirtualKeyboardNext(){
+  document.querySelectorAll("#virtualKeyboard .key").forEach(k=>k.classList.remove("next"));
+  const word = state.words[state.curWordIdx] || "";
+  const nextChar = (word[state.curCharIdx] || " ").toLowerCase();
+  const target = document.querySelector(`#virtualKeyboard .key[data-key="${nextChar==="."?"":nextChar}"]`);
+  if(target) target.classList.add("next");
+  else if(nextChar===" ") { const sp = document.querySelectorAll("#virtualKeyboard .key.wide")[0]; if(sp) sp.classList.add("next"); }
+}
+function renderHeatmap(){
+  const all = {...state.mistakes};
+  (loadHistory()||[]).forEach(h=>{ if(h.mistakes) Object.entries(h.mistakes).forEach(([k,v])=>{ all[k]=(all[k]||0)+v; }); });
+  document.querySelectorAll("#heatKeyboard .key").forEach(k=>{
+    k.classList.remove("heat-1","heat-2","heat-3");
+    const c = all[k.dataset.key]||0;
+    if(c>=6) k.classList.add("heat-3"); else if(c>=3) k.classList.add("heat-2"); else if(c>=1) k.classList.add("heat-1");
+  });
+}
+
+/* ================= FINISH / RESULTS ================= */
+async function finishTest(){
+  clearInterval(state.timer);
+  state.finished=true; state.running=false;
+  const elapsedMin = Math.max((Date.now()-state.startTime)/60000, 1/600);
+  const wpm = Math.round((state.correctChars/5)/elapsedMin);
+  const rawWpm = Math.round((state.totalTyped/5)/elapsedMin);
+  const acc = state.totalTyped>0 ? Math.round((state.correctChars/state.totalTyped)*100) : 100;
+  const timeTaken = Math.round((Date.now()-state.startTime)/1000);
+  const xp = Math.round(wpm*0.6 + acc*0.4);
+
+  document.getElementById("resWpm").textContent = wpm;
+  document.getElementById("resRaw").textContent = rawWpm;
+  document.getElementById("resAcc").textContent = acc+"%";
+  document.getElementById("resTime").textContent = timeTaken+"s";
+  document.getElementById("resErr").textContent = state.totalErrors;
+  document.getElementById("resXp").textContent = "+"+xp;
+  document.getElementById("resultsModal").style.display="flex";
+
+  const record = {date:new Date().toISOString(), mode:`${state.mode}/${state.category}`, wpm, acc, errors:state.totalErrors, mistakes:{...state.mistakes}};
+  const hist = await saveHistoryEntry(record);
+  await updateXpAndStreak(xp, wpm);
+  await checkAchievements(hist);
+  await maybeUpdateLeaderboard(wpm, acc);
+  renderHeatmap();
+}
+
+/* ================= PERSISTENCE (window.storage) ================= */
+function loadHistoryLocal(){
+  try{ return JSON.parse(localStorage.getItem("keyclack_history")||"[]"); }catch(e){ return []; }
+}
+function loadHistory(){ return loadHistoryLocal(); }
+async function saveHistoryEntry(record){
+  const hist = loadHistoryLocal();
+  hist.push(record);
+  localStorage.setItem("keyclack_history", JSON.stringify(hist));
+  try{ await storageSet("history:"+deviceId(), JSON.stringify(hist), false); }catch(e){}
+  return hist;
+}
+async function updateXpAndStreak(xp, wpm){
+  let prof = JSON.parse(localStorage.getItem("keyclack_profile")||'{"xp":0,"level":1,"streak":0,"lastDate":null,"best":0}');
+  prof.xp += xp;
+  prof.level = Math.floor(prof.xp/500)+1;
+  prof.best = Math.max(prof.best, wpm);
+  const today = new Date().toDateString();
+  if(prof.lastDate !== today){
+    const y = new Date(); y.setDate(y.getDate()-1);
+    prof.streak = (prof.lastDate === y.toDateString()) ? prof.streak+1 : 1;
+    prof.lastDate = today;
+  }
+  localStorage.setItem("keyclack_profile", JSON.stringify(prof));
+  renderProfileStats(prof);
+}
+function loadProfile(){
+  return JSON.parse(localStorage.getItem("keyclack_profile")||'{"xp":0,"level":1,"streak":0,"lastDate":null,"best":0}');
+}
+function renderProfileStats(prof){
+  document.getElementById("xpVal").textContent = prof.xp;
+  document.getElementById("levelVal").textContent = prof.level;
+  document.getElementById("streakVal").textContent = prof.streak;
+  document.getElementById("bestVal").textContent = prof.best;
+}
+async function checkAchievements(hist){
+  const prof = loadProfile();
+  let unlocked = JSON.parse(localStorage.getItem("keyclack_badges")||"[]");
+  let newlyUnlocked = false;
+  ACHIEVEMENTS.forEach(a=>{
+    if(!unlocked.includes(a.id) && a.check(hist, prof.streak)){
+      unlocked.push(a.id); newlyUnlocked = true;
+    }
+  });
+  localStorage.setItem("keyclack_badges", JSON.stringify(unlocked));
+  if(newlyUnlocked){
+    const el = document.getElementById("badgePop");
+    el.style.display="block";
+  } else {
+    document.getElementById("badgePop").style.display="none";
+  }
+  renderAchievements();
+}
+function renderAchievements(){
+  const unlocked = JSON.parse(localStorage.getItem("keyclack_badges")||"[]");
+  document.getElementById("achvGrid").innerHTML = ACHIEVEMENTS.map(a=>`
+    <div class="achv ${unlocked.includes(a.id)?'unlocked':''}">
+      <div class="ic">${a.ic}</div><b>${a.name}</b><span>${a.desc}</span>
+    </div>`).join("");
+}
+async function maybeUpdateLeaderboard(wpm, acc){
+  const name = localStorage.getItem("keyclack_name");
+  if(!name) return;
+  try{
+    let board = {};
+    const r = await storageGet("leaderboard", true);
+    if(r && r.value) board = JSON.parse(r.value);
+    const existing = board[name];
+    if(!existing || wpm > existing.wpm){
+      board[name] = {wpm, acc, updated:Date.now()};
+      await storageSet("leaderboard", JSON.stringify(board), true);
+    }
+  }catch(e){}
+  renderLeaderboard();
+}
+async function renderLeaderboard(){
+  let board = {};
+  try{
+    const r = await storageGet("leaderboard", true);
+    if(r && r.value) board = JSON.parse(r.value);
+  }catch(e){}
+  const rows = Object.entries(board).map(([name,d])=>({name,...d})).sort((a,b)=>b.wpm-a.wpm).slice(0,20);
+  document.getElementById("leaderboardBody").innerHTML = rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.name}</td><td>${r.wpm}</td><td>${r.acc}%</td></tr>`).join("") || "<tr><td colspan='4' class='hint'>No entries yet — set a display name and complete a test.</td></tr>";
+}
+
+/* ================= HISTORY TAB ================= */
+function renderHistoryTab(){
+  const hist = loadHistoryLocal().slice(-50).reverse();
+  const prof = loadProfile();
+  document.getElementById("historyStatRow").innerHTML = `
+    <div class="c"><b>${hist.length}</b><span>Tests Taken</span></div>
+    <div class="c"><b>${prof.best}</b><span>Best WPM</span></div>
+    <div class="c"><b>${hist.length? Math.round(hist.reduce((s,h)=>s+h.wpm,0)/hist.length):0}</b><span>Avg WPM</span></div>
+    <div class="c"><b>${hist.length? Math.round(hist.reduce((s,h)=>s+h.acc,0)/hist.length):0}%</b><span>Avg Accuracy</span></div>`;
+  document.getElementById("historyTable").querySelector("tbody").innerHTML = hist.slice(0,15).map(h=>
+    `<tr><td>${new Date(h.date).toLocaleDateString()}</td><td>${h.mode}</td><td>${h.wpm}</td><td>${h.acc}%</td><td>${h.errors}</td></tr>`
+  ).join("") || "<tr><td colspan='5' class='hint'>No tests yet.</td></tr>";
+  drawHistoryChart(hist.slice(0,20).reverse());
+  renderHeatmap();
+}
+function drawHistoryChart(hist){
+  const canvas = document.getElementById("historyChart");
+  const dpr = window.devicePixelRatio||1;
+  const w = canvas.clientWidth||600, h=180;
+  canvas.width = w*dpr; canvas.height = h*dpr;
+  const ctx = canvas.getContext("2d"); ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const style = getComputedStyle(document.body);
+  ctx.strokeStyle = style.getPropertyValue("--border"); ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){ const y = 10+i*(h-30)/4; ctx.beginPath(); ctx.moveTo(30,y); ctx.lineTo(w-10,y); ctx.stroke(); }
+  if(hist.length<2){ ctx.fillStyle=style.getPropertyValue("--ink-faint"); ctx.font="12px Inter"; ctx.fillText("Complete more tests to see your trend",30,h/2); return; }
+  const maxWpm = Math.max(...hist.map(x=>x.wpm),20);
+  ctx.strokeStyle = style.getPropertyValue("--caret"); ctx.lineWidth=2; ctx.beginPath();
+  hist.forEach((pt,i)=>{
+    const x = 30 + i*((w-40)/(hist.length-1));
+    const y = 10 + (h-30) - (pt.wpm/maxWpm)*(h-30);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  ctx.fillStyle = style.getPropertyValue("--caret");
+  hist.forEach((pt,i)=>{
+    const x = 30 + i*((w-40)/(hist.length-1));
+    const y = 10 + (h-30) - (pt.wpm/maxWpm)*(h-30);
+    ctx.beginPath(); ctx.arc(x,y,3,0,7); ctx.fill();
+  });
+}
+
+/* ================= CERTIFICATE (request → approve → generate) ================= */
+function drawLogoBadge(ctx, cx, cy, r, style){
+  // circular seal with a keycap glyph, echoes the site's dot logo
+  const grad = ctx.createLinearGradient(cx-r,cy-r,cx+r,cy+r);
+  grad.addColorStop(0, style.getPropertyValue("--caret"));
+  grad.addColorStop(1, style.getPropertyValue("--violet"));
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle=grad; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,cy,r-6,0,Math.PI*2); ctx.strokeStyle=style.getPropertyValue("--bg-2"); ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle = style.getPropertyValue("--bg-2");
+  ctx.font = "700 "+Math.round(r*0.7)+"px 'Space Grotesk'";
+  ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.fillText("K", cx, cy+2);
+  ctx.restore();
+}
+function drawSignature(ctx, x, y, style){
+  ctx.save();
+  ctx.strokeStyle = style.getPropertyValue("--ink");
+  ctx.lineWidth = 2; ctx.lineCap="round"; ctx.lineJoin="round";
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.bezierCurveTo(x+20,y-25, x+40,y+20, x+65,y-5);
+  ctx.bezierCurveTo(x+85,y-25, x+95,y+10, x+115,y-8);
+  ctx.bezierCurveTo(x+130,y-20, x+140,y+5, x+160,y-2);
+  ctx.stroke();
+  ctx.restore();
+}
+function generateCertificate(){
+  const prof = loadProfile();
+  const name = document.getElementById("certName").value.trim() || "Typist";
+  const canvas = document.getElementById("certCanvas");
+  const ctx = canvas.getContext("2d");
+  const style = getComputedStyle(document.body);
+  const W=1000,H=680;
+  ctx.fillStyle = style.getPropertyValue("--bg-2"); ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle = style.getPropertyValue("--caret"); ctx.lineWidth=7; ctx.strokeRect(22,22,W-44,H-44);
+  ctx.strokeStyle = style.getPropertyValue("--border"); ctx.lineWidth=1; ctx.strokeRect(38,38,W-76,H-76);
+  // corner ticks
+  ctx.strokeStyle = style.getPropertyValue("--gold"); ctx.lineWidth=3;
+  [[38,38,1,1],[W-38,38,-1,1],[38,H-38,1,-1],[W-38,H-38,-1,-1]].forEach(([cx,cy,sx,sy])=>{
+    ctx.beginPath(); ctx.moveTo(cx,cy+30*sy); ctx.lineTo(cx,cy); ctx.lineTo(cx+30*sx,cy); ctx.stroke();
+  });
+  drawLogoBadge(ctx, W/2, 110, 40, style);
+  ctx.textAlign="center";
+  ctx.fillStyle = style.getPropertyValue("--ink-faint"); ctx.font="20px Inter"; ctx.letterSpacing="3px";
+  ctx.fillText("CERTIFICATE OF ACHIEVEMENT",W/2,190);
+  ctx.letterSpacing="0px";
+  ctx.fillStyle = style.getPropertyValue("--ink"); ctx.font="700 46px 'Space Grotesk'"; ctx.fillText(name,W/2,270);
+  ctx.font="18px Inter"; ctx.fillStyle = style.getPropertyValue("--ink-dim");
+  ctx.fillText("has achieved a verified typing speed of",W/2,315);
+  ctx.font="700 72px 'IBM Plex Mono'"; ctx.fillStyle = style.getPropertyValue("--caret");
+  ctx.fillText(prof.best+" WPM",W/2,410);
+  ctx.font="16px Inter"; ctx.fillStyle = style.getPropertyValue("--ink-faint");
+  ctx.fillText("Level "+prof.level+" · "+prof.xp+" XP earned · Approved certificate request",W/2,450);
+  // signature block
+  ctx.textAlign="left";
+  drawSignature(ctx, W/2-260, 560, style);
+  ctx.strokeStyle = style.getPropertyValue("--border"); ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(W/2-260,575); ctx.lineTo(W/2-60,575); ctx.stroke();
+  ctx.font="14px Inter"; ctx.fillStyle = style.getPropertyValue("--ink-faint");
+  ctx.fillText("Admin Signature",W/2-260,595);
+  ctx.textAlign="right";
+  ctx.font="14px Inter"; ctx.fillText("Issued "+new Date().toLocaleDateString(),W/2+260,595);
+  ctx.beginPath(); ctx.moveTo(W/2+60,575); ctx.lineTo(W/2+260,575); ctx.stroke();
+  ctx.font="14px Inter"; ctx.textAlign="left"; ctx.fillText("Date",W/2+60,595);
+}
+document.getElementById("genCertBtn").onclick = generateCertificate;
+document.getElementById("downloadCertBtn").onclick = ()=>{
+  const canvas = document.getElementById("certCanvas");
+  const link = document.createElement("a");
+  link.download = "typing-certificate.png";
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+};
+
+/* certificate request workflow (shared storage) */
+async function loadCertRequests(){
+  try{
+    const r = await storageGet("certrequests", true);
+    return r && r.value ? JSON.parse(r.value) : {};
+  }catch(e){ return {}; }
+}
+async function saveCertRequests(reqs){
+  return await storageSet("certrequests", JSON.stringify(reqs), true);
+}
+function myCertReqId(){ return "req_"+deviceId(); }
+async function refreshCertStatus(){
+  const reqs = await loadCertRequests();
+  const mine = reqs[myCertReqId()];
+  const pill = document.getElementById("certStatusPill");
+  const note = document.getElementById("certStatusNote");
+  const genBox = document.getElementById("certGenBox");
+  if(!mine){
+    pill.textContent="Not requested"; pill.className="status-pill none";
+    note.textContent=""; genBox.style.display="none";
+  } else if(mine.status==="pending"){
+    pill.textContent="Pending review"; pill.className="status-pill pending";
+    note.textContent="Your request is waiting for an admin to approve it.";
+    genBox.style.display="none";
+  } else if(mine.status==="approved"){
+    pill.textContent="Approved ✓"; pill.className="status-pill approved";
+    note.textContent="Approved! You can now generate and download your certificate.";
+    genBox.style.display="block";
+  } else if(mine.status==="rejected"){
+    pill.textContent="Rejected"; pill.className="status-pill rejected";
+    note.textContent="Your request was rejected. You can submit a new one.";
+    genBox.style.display="none";
+  }
+}
+document.getElementById("requestCertBtn").onclick = async ()=>{
+  const name = document.getElementById("certName").value.trim();
+  if(!name){ alert("Enter your name first."); return; }
+  const btn = document.getElementById("requestCertBtn");
+  const originalLabel = btn.textContent;
+  btn.disabled = true; btn.textContent = "Sending…";
+  try{
+    const prof = loadProfile();
+    const reqs = await loadCertRequests();
+    reqs[myCertReqId()] = {
+      name, wpm:prof.best, level:prof.level, xp:prof.xp,
+      status:"pending", requestedAt: Date.now()
+    };
+    const saved = await saveCertRequests(reqs);
+    if(saved === null && CLOUD_STORAGE_AVAILABLE){
+      throw new Error("Storage write failed");
+    }
+    await refreshCertStatus();
+    btn.textContent = "Sent ✓";
+    setTimeout(()=>{ btn.textContent = originalLabel; }, 1800);
+  }catch(e){
+    alert("Couldn't send your request. Please try again in a moment.");
+    btn.textContent = originalLabel;
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+/* ================= EXPORT / SHARE RESULT ================= */
+document.getElementById("exportImgBtn").onclick = ()=>{
+  const c = document.createElement("canvas"); c.width=600; c.height=340;
+  const ctx = c.getContext("2d");
+  const style = getComputedStyle(document.body);
+  ctx.fillStyle = style.getPropertyValue("--bg-2"); ctx.fillRect(0,0,600,340);
+  ctx.fillStyle = style.getPropertyValue("--ink"); ctx.font="700 26px 'Space Grotesk'"; ctx.fillText("Keyclack Result",30,50);
+  ctx.font="700 70px 'IBM Plex Mono'"; ctx.fillStyle = style.getPropertyValue("--caret");
+  ctx.fillText(document.getElementById("resWpm").textContent+" WPM",30,150);
+  ctx.font="20px Inter"; ctx.fillStyle = style.getPropertyValue("--ink-dim");
+  ctx.fillText("Accuracy: "+document.getElementById("resAcc").textContent,30,200);
+  ctx.fillText("Errors: "+document.getElementById("resErr").textContent,30,230);
+  ctx.fillText("Time: "+document.getElementById("resTime").textContent,30,260);
+  const link = document.createElement("a"); link.download="typing-result.png"; link.href=c.toDataURL("image/png"); link.click();
+};
+document.getElementById("shareBtn").onclick = async ()=>{
+  const text = `I just typed ${document.getElementById("resWpm").textContent} WPM at ${document.getElementById("resAcc").textContent} accuracy on Keyclack!`;
+  if(navigator.share){ try{ await navigator.share({text}); }catch(e){} }
+  else{ await navigator.clipboard.writeText(text); alert("Result copied to clipboard!"); }
+};
+
+/* ================= UI WIRING ================= */
+function buildAmountSeg(){
+  const seg = document.getElementById("amountSeg");
+  seg.innerHTML = AMOUNTS[state.mode].map((a,i)=>`<button class="${a===state.amount?'active':''}" data-a="${a}">${a}</button>`).join("");
+  seg.querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    seg.querySelectorAll("button").forEach(x=>x.classList.remove("active")); b.classList.add("active");
+    state.amount = parseInt(b.dataset.a); newTest();
+  });
+}
+document.getElementById("modeSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+  document.getElementById("modeSeg").querySelectorAll("button").forEach(x=>x.classList.remove("active")); b.classList.add("active");
+  state.mode = b.dataset.mode; state.amount = AMOUNTS[state.mode][state.mode==="time"?1:1];
+  buildAmountSeg(); newTest();
+});
+document.getElementById("catSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+  document.getElementById("catSeg").querySelectorAll("button").forEach(x=>x.classList.remove("active")); b.classList.add("active");
+  state.category = b.dataset.cat;
+  document.getElementById("customBox").style.display = state.category==="custom" ? "block":"none";
+  newTest();
+});
+document.getElementById("diffSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+  document.getElementById("diffSeg").querySelectorAll("button").forEach(x=>x.classList.remove("active")); b.classList.add("active");
+  state.difficulty = b.dataset.d; newTest();
+});
+document.getElementById("customText").addEventListener("input",()=>{ if(state.category==="custom") newTest(); });
+document.getElementById("restartBtn").onclick = newTest;
+document.getElementById("tryAgainBtn").onclick = ()=>{ document.getElementById("resultsModal").style.display="none"; newTest(); };
+document.getElementById("closeModalBtn").onclick = ()=>{ document.getElementById("resultsModal").style.display="none"; };
+
+/* theme / font / sound / focus */
+document.getElementById("themeSel").onchange = e=>{ document.body.dataset.theme = e.target.value; localStorage.setItem("keyclack_theme", e.target.value); };
+document.getElementById("fontSel").onchange = e=>{ document.documentElement.style.setProperty("--font-mono", e.target.value); localStorage.setItem("keyclack_font", e.target.value); };
+document.getElementById("soundBtn").onclick = e=>{
+  state.sound = !state.sound;
+  e.target.textContent = state.sound? "🔊":"🔇";
+  e.target.classList.toggle("active", state.sound);
+  localStorage.setItem("keyclack_sound", state.sound?"1":"0");
+};
+document.getElementById("focusBtn").onclick = ()=>{ document.body.classList.toggle("focus"); };
+
+/* tabs */
+document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("nav.tabs button").forEach(x=>x.classList.remove("active")); b.classList.add("active");
+  ["test","history","achievements","leaderboard","race","certificate","admin"].forEach(t=>{
+    document.getElementById("tab-"+t).style.display = (t===b.dataset.tab) ? "block":"none";
+  });
+  if(b.dataset.tab==="history") renderHistoryTab();
+  if(b.dataset.tab==="achievements"){ renderProfileStats(loadProfile()); renderAchievements(); }
+  if(b.dataset.tab==="leaderboard") renderLeaderboard();
+  if(b.dataset.tab==="certificate") refreshCertStatus();
+  if(b.dataset.tab==="admin") showAdminView();
+});
+
+/* leaderboard name */
+document.getElementById("displayName").value = localStorage.getItem("keyclack_name")||"";
+document.getElementById("saveNameBtn").onclick = ()=>{
+  const n = document.getElementById("displayName").value.trim();
+  if(n){ localStorage.setItem("keyclack_name", n); maybeUpdateLeaderboard(loadProfile().best, 100); alert("Name saved. You'll appear on the leaderboard after your next completed test."); }
+};
+
+/* ================= RACE (async, shared storage) ================= */
+let raceState = {code:null, text:null, joined:false, myProgress:0};
+document.getElementById("joinRoomBtn").onclick = async ()=>{
+  const code = document.getElementById("roomCode").value.trim().toUpperCase();
+  if(!code) return;
+  raceState.code = code;
+  let room;
+  try{
+    const r = await storageGet("race:"+code, true);
+    room = r? JSON.parse(r.value) : null;
+  }catch(e){ room = null; }
+  if(!room){
+    const text = QUOTES[Math.floor(Math.random()*QUOTES.length)];
+    room = {text, players:{}};
+    await storageSet("race:"+code, JSON.stringify(room), true);
+  }
+  raceState.text = room.text; raceState.joined = true;
+  document.getElementById("startRaceBtn").style.display="inline-block";
+  pollRace();
+};
+document.getElementById("startRaceBtn").onclick = ()=>{
+  const name = localStorage.getItem("keyclack_name") || "Guest_"+deviceId().slice(-4);
+  state.category="custom";
+  document.getElementById("customText").value = raceState.text;
+  document.querySelectorAll("#catSeg button").forEach(x=>x.classList.remove("active"));
+  document.querySelector('#catSeg button[data-cat="custom"]').classList.add("active");
+  document.getElementById("customBox").style.display="block";
+  newTest();
+  raceTrackTimer && clearInterval(raceTrackTimer);
+  raceTrackTimer = setInterval(async ()=>{
+    const progress = state.words.length? Math.min(100, Math.round((state.curWordIdx/state.words.length)*100)) : 0;
+    try{
+      const r = await storageGet("race:"+raceState.code, true);
+      const room = JSON.parse(r.value);
+      room.players[name] = progress;
+      await storageSet("race:"+raceState.code, JSON.stringify(room), true);
+    }catch(e){}
+  }, 1500);
+};
+let raceTrackTimer=null, racePollTimer=null;
+function pollRace(){
+  clearInterval(racePollTimer);
+  racePollTimer = setInterval(async ()=>{
+    if(!raceState.code) return;
+    try{
+      const r = await storageGet("race:"+raceState.code, true);
+      const room = JSON.parse(r.value);
+      const el = document.getElementById("raceTracks");
+      el.innerHTML = Object.entries(room.players||{}).map(([n,p])=>`
+        <div class="race-track"><div style="display:flex;justify-content:space-between;"><b>${n}</b><span>${p}%</span></div>
+        <div class="race-bar-bg"><div class="race-bar" style="width:${p}%"></div></div></div>`).join("") || "<p class='hint'>Waiting for racers to start typing…</p>";
+    }catch(e){}
+  }, 1500);
+}
+
+/* ================= ADMIN AUTH ================= */
+const DEFAULT_ADMIN = {username:"admin", password:"admin123"};
+async function loadAdminCreds(){
+  try{
+    const r = await storageGet("admin:credentials", true);
+    return r && r.value ? JSON.parse(r.value) : {...DEFAULT_ADMIN};
+  }catch(e){ return {...DEFAULT_ADMIN}; }
+}
+async function saveAdminCreds(creds){
+  try{ await storageSet("admin:credentials", JSON.stringify(creds), true); }catch(e){}
+}
+function isAdminLoggedIn(){ return sessionStorage.getItem("keyclack_admin_session")==="1"; }
+function showAdminView(){
+  const loggedIn = isAdminLoggedIn();
+  document.getElementById("adminLoginView").style.display = loggedIn ? "none":"block";
+  document.getElementById("adminPanelView").style.display = loggedIn ? "block":"none";
+  if(loggedIn){
+    document.getElementById("adminWhoName").textContent = sessionStorage.getItem("keyclack_admin_name")||"admin";
+    renderCertRequestsAdmin();
+  }
+}
+document.getElementById("adminLoginBtn").onclick = async ()=>{
+  const u = document.getElementById("adminUser").value.trim();
+  const p = document.getElementById("adminPass").value;
+  const creds = await loadAdminCreds();
+  const errEl = document.getElementById("adminLoginErr");
+  if(u===creds.username && p===creds.password){
+    sessionStorage.setItem("keyclack_admin_session","1");
+    sessionStorage.setItem("keyclack_admin_name",u);
+    errEl.textContent="";
+    document.getElementById("adminUser").value=""; document.getElementById("adminPass").value="";
+    showAdminView();
+  } else {
+    errEl.textContent="Incorrect username or password.";
+  }
+};
+document.getElementById("adminLogoutBtn").onclick = ()=>{
+  sessionStorage.removeItem("keyclack_admin_session");
+  showAdminView();
+};
+document.getElementById("saveAdminCredsBtn").onclick = async ()=>{
+  const creds = await loadAdminCreds();
+  const newU = document.getElementById("newAdminUser").value.trim();
+  const newP = document.getElementById("newAdminPass").value;
+  if(newU) creds.username = newU;
+  if(newP) creds.password = newP;
+  await saveAdminCreds(creds);
+  sessionStorage.setItem("keyclack_admin_name", creds.username);
+  document.getElementById("newAdminUser").value=""; document.getElementById("newAdminPass").value="";
+  alert("Admin credentials updated. Use the new credentials next time you log in.");
+};
+
+/* certificate requests — admin side */
+async function renderCertRequestsAdmin(){
+  const reqs = await loadCertRequests();
+  const list = document.getElementById("certRequestsList");
+  const entries = Object.entries(reqs).sort((a,b)=>b[1].requestedAt-a[1].requestedAt);
+  if(!entries.length){ list.innerHTML = "<p class='hint'>No requests yet.</p>"; return; }
+  list.innerHTML = entries.map(([id,r])=>`
+    <div class="req-row">
+      <div class="meta"><b>${r.name}</b> — ${r.wpm} WPM · Level ${r.level} · requested ${new Date(r.requestedAt).toLocaleDateString()}</div>
+      <div style="display:flex;align-items:center;gap:.6rem;">
+        <span class="status-pill ${r.status}">${r.status}</span>
+        <div class="req-actions">
+          <button class="btn" data-approve="${id}" ${r.status==='approved'?'disabled':''}>Approve</button>
+          <button class="btn secondary" data-reject="${id}" ${r.status==='rejected'?'disabled':''}>Reject</button>
+        </div>
+      </div>
+    </div>`).join("");
+  list.querySelectorAll("[data-approve]").forEach(b=>b.onclick=async ()=>{
+    const reqs2 = await loadCertRequests(); reqs2[b.dataset.approve].status="approved"; await saveCertRequests(reqs2); renderCertRequestsAdmin();
+  });
+  list.querySelectorAll("[data-reject]").forEach(b=>b.onclick=async ()=>{
+    const reqs2 = await loadCertRequests(); reqs2[b.dataset.reject].status="rejected"; await saveCertRequests(reqs2); renderCertRequestsAdmin();
+  });
+}
+
+/* word lists + reminders */
+document.getElementById("saveWordsBtn").onclick = async ()=>{
+  const words = document.getElementById("adminWords").value.split(",").map(w=>w.trim()).filter(Boolean);
+  try{ await storageSet("wordlist:medium", JSON.stringify(words), true); alert("Saved. This word list is now shared with everyone using medium difficulty."); }
+  catch(e){ alert("Could not save — storage unavailable."); }
+};
+(async ()=>{
+  const custom = await getCustomWordSource();
+  document.getElementById("adminWords").value = custom ? custom.join(", ") : WORD_LISTS.medium.join(", ");
+})();
+document.getElementById("enableNotif").onclick = async ()=>{
+  if(!("Notification" in window)){ document.getElementById("notifStatus").textContent="Not supported in this browser."; return; }
+  const perm = await Notification.requestPermission();
+  document.getElementById("notifStatus").textContent = perm==="granted" ? "Enabled — reminder set for while this tab stays open." : "Permission denied.";
+  if(perm==="granted"){
+    setInterval(()=>{ new Notification("Keyclack", {body:"Time for a quick typing practice session!"}); }, 1000*60*60);
+  }
+};
+
+/* ================= INIT ================= */
+(function init(){
+  const yearEl = document.getElementById("footYear"); if(yearEl) yearEl.textContent = new Date().getFullYear();
+  const savedTheme = localStorage.getItem("keyclack_theme"); if(savedTheme){ document.body.dataset.theme=savedTheme; document.getElementById("themeSel").value=savedTheme; }
+  const savedFont = localStorage.getItem("keyclack_font"); if(savedFont){ document.documentElement.style.setProperty("--font-mono",savedFont); document.getElementById("fontSel").value=savedFont; }
+  const savedSound = localStorage.getItem("keyclack_sound"); state.sound = savedSound!=="0";
+  document.getElementById("soundBtn").textContent = state.sound?"🔊":"🔇";
+  document.getElementById("soundBtn").classList.toggle("active", state.sound);
+  buildAmountSeg();
+  renderProfileStats(loadProfile());
+  refreshCertStatus();
+  newTest();
+  window.addEventListener("resize",()=>{ if(document.getElementById("tab-history").style.display!=="none") renderHistoryTab(); });
+})();
+</script>
+</body>
+</html>
